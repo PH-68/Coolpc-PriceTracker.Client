@@ -1,0 +1,117 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+    List<Coolpc_PriceTracker.Client.Models.ItemListModel.ItemClasses> gitHubRepoResponse = ViewBag.GitHubResponse;
+    gitHubRepoResponse = gitHubRepoResponse.OrderBy(x => x.dataUpdatedTime).ToList();
+    string data = "";
+    string labels = "";
+    Dictionary<string, int>[] dict = new Dictionary<string, int>[gitHubRepoResponse.Count];
+    for (int c = 0; c < gitHubRepoResponse.Count; c++)
+    {
+        dict[c] = new Dictionary<string, int>();
+        foreach (var item in gitHubRepoResponse[c].itemClasses)
+        {
+            foreach (var item1 in item.itemGroups)
+            {
+                foreach (var item2 in item1.itemGroup)
+                {
+                    if (!dict[c].ContainsKey(item2.ItemName.Split(",")[0]))
+                    {
+                        dict[c].Add(item2.ItemName.Split(",")[0], item2.Price);
+                    }
+
+                }
+            }
+        }
+    }
+}
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+
+    <div class="accordion" id="accordionExample">
+        @for (int i = 0; i < gitHubRepoResponse[^1].itemClasses.Count; i++)
+        {
+            <div class="card">
+                <div class="card-header" id="heading-@i">
+                    <h2 class="mb-0">
+
+                        <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse-@i" aria-expanded="true" aria-controls="collapse-@i">
+                            @gitHubRepoResponse[^1].itemClasses[i].className
+                        </button>
+                    </h2>
+                </div>
+
+                <div id="collapse-@i" class="collapse" aria-labelledby="heading-@i" data-parent="#accordionExample">
+                    <div class="card-body">
+                        <div class="list-group">
+                            @for (int v = 0; v < gitHubRepoResponse[^1].itemClasses[i].itemGroups.Count; v++)
+                            {
+                                <button class="list-group-item list-group-item-action " type="button" data-toggle="collapse" data-target="#collapse-@i-@v" aria-expanded="false" aria-controls="collapseExample">
+                                    @gitHubRepoResponse[^1].itemClasses[i].itemGroups[v].groupName
+                                </button>
+                                <div class="collapse" id="collapse-@i-@v">
+                                    <div class="card card-body">
+                                        <div class="list-group">
+                                            @for (int n = 0; n < gitHubRepoResponse[^1].itemClasses[i].itemGroups[v].itemGroup.Count; n++)
+                                            {
+                                                string CssClass = gitHubRepoResponse[^1].itemClasses[i].itemGroups[v].itemGroup[n].IsHotItem ? "border border-danger" : "";
+
+                                                <button class="list-group-item list-group-item-action @CssClass" type="button" data-toggle="collapse" data-target="#collapse-@i-@v-@n" aria-expanded="false" aria-controls="collapseExample">
+                                                    @gitHubRepoResponse[^1].itemClasses[i].itemGroups[v].itemGroup[n].ItemName
+                                                    <span class="badge badge-primary badge-pill">$ @gitHubRepoResponse[^1].itemClasses[i].itemGroups[v].itemGroup[n].Price</span>
+                                                </button>
+                                                <div class="collapse" id="collapse-@i-@v-@n">
+                                                    <div class="card card-body">
+                                                        <canvas id="Chart-@i-@v-@n"></canvas>
+                                                        @{
+                                                            data = "";
+                                                            labels = "";
+                                                            for (int c = 0; c < gitHubRepoResponse.Count; c++)
+                                                            {
+                                                                if (dict[c].ContainsKey(gitHubRepoResponse[^1].itemClasses[i].itemGroups[v].itemGroup[n].ItemName.Split(",")[0]))
+                                                                {
+                                                                    data += " \"" + dict[c][gitHubRepoResponse[^1].itemClasses[i].itemGroups[v].itemGroup[n].ItemName.Split(",")[0]].ToString() + "\", ";
+                                                                    labels += "'" + gitHubRepoResponse[c].dataUpdatedTime.ToString("g") + "',";
+                                                                }
+                                                            }
+                                                            data = data.Substring(0, data.Length - 1);
+                                                            labels = labels.Substring(0, labels.Length - 1);
+                                                            <script type="text/javascript" async defer>
+                                                                $(document).ready(async function () {
+                                                            //document.getElementById('Chart-@i-@v-@n').getContext('2d');
+                                                                    new Chart(document.getElementById('Chart-@i-@v-@n').getContext('2d'), {
+                                                                type: 'line',
+                                                                data: {
+                                                                    labels: [@Html.Raw(labels)],
+                                                                    datasets: [{
+                                                                        label: 'My First dataset',
+                                                                        backgroundColor: 'rgb(255, 99, 132)',
+                                                                        borderColor: 'rgb(255, 99, 132)',
+                                                                        data: [@Html.Raw(data)]
+                                                                    }]
+                                                                }
+                                                                    });
+                                                                });
+                                                            </script>
+
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        }
+    </div>
+</div>
+@{
+    gitHubRepoResponse.Clear();
+    dict = null;
+    GC.Collect();
+}
